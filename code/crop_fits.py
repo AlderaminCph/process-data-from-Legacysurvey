@@ -8,6 +8,7 @@ import doctest
 import pandas as pd
 import astropy.io.fits as fits
 from typing import Tuple
+import numpy as np
 
 
 def get_galaxy_diameter(
@@ -45,6 +46,18 @@ def get_central_pix_coordinates(fits_file: str) -> Tuple[int, int]:
         x_0 = int(hdr["NAXIS1"] / 2)
         y_0 = int(hdr["NAXIS2"] / 2)
     return (x_0, y_0)
+
+
+def get_image_data(fits_file: str) -> np.ndarray:
+    """Retrive the image data from fits file
+    Args:
+        fits_file: full path to the fits file
+    Return:
+        numpy ndarray with image data values
+    """
+    with fits.open(fits_file) as hdul:
+        image_data = hdul[0].data
+    return image_data
 
 
 doctest.testmod()
