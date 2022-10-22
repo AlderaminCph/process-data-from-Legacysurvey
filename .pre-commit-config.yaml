@@ -4,7 +4,9 @@ repos:
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
+        exclude: ^galaxy_fits/
     -   id: trailing-whitespace
+        exclude: ^galaxy_fits/
 -   repo: https://github.com/PyCQA/flake8
     rev: 5.0.4
     hooks:
