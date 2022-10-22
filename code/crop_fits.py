@@ -1,13 +1,17 @@
 """
+Sypkova Anastasia
+
 Cut out galaxy image from fits file.
 
 >>> df = read_sample_file("S0.20220728.dat")
 >>> get_galaxy_diameter('ESO545-040', df)
 94.9
 
->>> galaxy_ra_dec('ESO545-040', df)
-<SkyCoord (ICRS): (ra, dec) in deg
-    (39.54879, -20.16696)>
+>>> get_galaxy_ra_dec('ESO545-040', df).ra.degree
+39.54879
+
+>>> get_galaxy_ra_dec('ESO545-040', df).dec.degree
+-20.16696
 
 """
 import doctest
@@ -57,7 +61,7 @@ def get_galaxy_diameter(galaxyname: str, df: pd.core.frame.DataFrame) -> float:
     return float(df[df["objname"] == galaxyname]["d25arcsec"])
 
 
-def galaxy_ra_dec(
+def get_galaxy_ra_dec(
     galaxyname: str, df: pd.core.frame.DataFrame
 ) -> Optional[SkyCoord]:
     """Retrive the galaxy celestial coordinates from the sample dat file.
