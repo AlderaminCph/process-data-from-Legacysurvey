@@ -11,7 +11,9 @@ import astropy.io.fits as fits
 import astropy.wcs as wcs
 import numpy as np
 import pandas as pd
+from astropy import units as u
 from astropy.nddata import Cutout2D
+from astropy.wcs.utils import proj_plane_pixel_scales
 
 
 def get_galaxy_diameter(
@@ -89,7 +91,7 @@ def create_crop_fits(
     Args:
         image_data: numpy ndarray with image data values
         pos: tuple (x_0, y_0) with pixel coordinates of the galaxy center
-        diameter_pix: the diameter of the galaxy in arcseconds
+        diameter_pix: the diameter of the galaxy in pixels
         w: wcs object of fits file
     """
     cutout = Cutout2D(
@@ -102,6 +104,22 @@ def create_crop_fits(
     hdu.data = cutout.data
     hdu.header.update(cutout.wcs.to_header())
     hdu.writeto(cutout_name)
+
+
+def get_pix_diameter(diameter_arcsec: float, w: wcs.WCS) -> float:
+    """Convert the galaxy diameter from arcseconds to pixels.
+
+    Args:
+        diameter_arcsec: the galaxy diameter in arcseconds
+        w: wcs object of fits file containing the galaxy image
+    Return:
+        diameter_pix: the galaxy diameter in pixels
+    """
+    scale = u.pixel_scale(
+        proj_plane_pixel_scales(w)[0] * w.wcs.cunit[0] / u.pixel
+    )
+    diameter_pix = (diameter_arcsec * u.arcsec).to(u.pixel, scale).value
+    return diameter_pix
 
 
 doctest.testmod()
