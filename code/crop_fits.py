@@ -1,31 +1,38 @@
 """
 Cut out galaxy image from fits file.
 
->>> get_galaxy_diameter('ESO545-040')
+>>> df = read_sample_file("S0.20220728.dat")
+>>> get_galaxy_diameter('ESO545-040', df)
 94.9
+
+>>> galaxy_ra_dec('ESO545-040', df)
+<SkyCoord (ICRS): (ra, dec) in deg
+    (39.54879, -20.16696)>
+
 """
 import doctest
-from typing import Tuple
+from typing import Optional, Tuple
 
 import astropy.io.fits as fits
 import astropy.wcs as wcs
 import numpy as np
 import pandas as pd
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 from astropy.nddata import Cutout2D
 from astropy.wcs.utils import proj_plane_pixel_scales
 
 
-def get_galaxy_diameter(
-    galaxyname: str, filename: str = "S0.20220728.dat"
-) -> float:
-    """Retrive the diameter of the galaxy by its name from the sample dat file.
+def read_sample_file(
+    filename: str = "S0.20220728.dat",
+) -> pd.core.frame.DataFrame:
+    """Read data from the file containing information about galaxy sample and
+     creates dataframe with it.
 
     Args:
         filename: the dat file with the infotmation about the sample
-        galaxyname: the object name from dat file
     Return:
-        galaxy_diameter: the diameter in arcseconds
+        df: pandas dataframe
     """
     df = pd.read_csv(
         filename, sep="|", header=0, skiprows=lambda x: x in [1, 44501]
@@ -36,8 +43,35 @@ def get_galaxy_diameter(
             df[col] = df[col].str.strip()
         if isinstance(df[col].iloc[df[col].first_valid_index()], float):
             df[col] = df[col].astype("float")
-    galaxy_diameter = float(df[df["objname"] == galaxyname]["d25arcsec"])
-    return galaxy_diameter
+    return df
+
+
+def get_galaxy_diameter(galaxyname: str, df: pd.core.frame.DataFrame) -> float:
+    """Retrive the galaxy diameter by its name from the sample pd.dataframe.
+
+    Args:
+        galaxyname: the object name from dat file
+    Return:
+        galaxy_diameter: the diameter in arcseconds
+    """
+    return float(df[df["objname"] == galaxyname]["d25arcsec"])
+
+
+def galaxy_ra_dec(
+    galaxyname: str, df: pd.core.frame.DataFrame
+) -> Optional[SkyCoord]:
+    """Retrive the galaxy celestial coordinates from the sample dat file.
+
+    Args:
+        galaxyname: the name of the galaxy
+        df: pandas dataframe with the galaxy sample information
+    Return:
+        cel_coord: pair of values ra and dec of galaxy
+    """
+    ra = float(df[df["objname"] == galaxyname]["ra"])
+    dec = float(df[df["objname"] == galaxyname]["de"])
+    cel_coord = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame="icrs")
+    return cel_coord
 
 
 def get_central_pix_coordinates(fits_file: str) -> Tuple[int, int]:
