@@ -19,13 +19,20 @@ from typing import Optional, Tuple
 
 import astropy.io.fits as fits
 import astropy.wcs as wcs
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.nddata import Cutout2D
+from astropy.visualization import (
+    ImageNormalize,
+    PercentileInterval,
+    PowerStretch,
+)
 from astropy.wcs.utils import proj_plane_pixel_scales
+from matplotlib import colormaps
 
 
 def read_sample_file(
@@ -181,6 +188,58 @@ def set_plt_parameters():
             "font.size": 20,
         }
     )
+
+
+def plot_crop_png(
+    image_data: np.ndarray,
+    w: wcs.WCS,
+    pos_pix: Tuple[float, float],
+    diameter_pix: float,
+    galaxyname: str,
+    pngname: str,
+) -> None:
+    """Plot png image of cutout fits with galaxy.
+
+    Args:
+        image_data: numpy ndarray with image data values
+        w: wcs object of fits file containing the galaxy image
+        pos_pix: pixel position (x_0, y_0) of the galaxy
+        diameter_pix: the galaxy diameter in pixels
+        galaxyname: name of the galaxy
+        pngname: name of png file to save the picture
+    """
+    set_plt_parameters()
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Display the image
+
+    interval = PercentileInterval(99.1)
+    vmin, vmax = interval.get_limits(image_data)
+    norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=PowerStretch(0.5))
+    color = colormaps["inferno"]
+    ax = plt.subplot(projection=w)
+    ax.imshow(image_data, cmap=color, norm=norm, origin="lower")
+    ax.grid(color="white", ls="dotted")
+    ax.set_xlabel(r"$\alpha$", fontsize=25)
+    ax.set_ylabel(r"$\delta$", fontsize=25)
+    ax.set_title(galaxyname)
+
+    # Create a Rectangle patch
+    x_0, y_0 = pos_pix
+    rect = patches.Rectangle(
+        (x_0 - diameter_pix, y_0 - diameter_pix),
+        2 * diameter_pix,
+        2 * diameter_pix,
+        linewidth=1,
+        edgecolor="lightgreen",
+        facecolor="none",
+    )
+
+    # Add the patch to the Axes
+    ax.add_patch(rect)
+    plt.savefig(pngname, bbox_inches="tight")
+    plt.show()
 
 
 doctest.testmod()
