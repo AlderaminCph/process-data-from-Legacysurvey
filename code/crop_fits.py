@@ -19,6 +19,7 @@ from typing import Optional, Tuple
 
 import astropy.io.fits as fits
 import astropy.wcs as wcs
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from astropy import units as u
@@ -158,6 +159,28 @@ def get_pix_diameter(diameter_arcsec: float, w: wcs.WCS) -> float:
     )
     diameter_pix = (diameter_arcsec * u.arcsec).to(u.pixel, scale).value
     return diameter_pix
+
+
+def set_plt_parameters():
+    """
+    Set Latex plot parameters for slices pictures
+    """
+
+    plt.rc("text", usetex=True)
+    plt.rc(
+        "text.latex",
+        preamble="\n".join(
+            [r"\usepackage{amsmath,amssymb}", r"\usepackage[russian]{babel}"]
+        ),
+    )
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Helvetica"],
+            "font.size": 20,
+        }
+    )
 
 
 doctest.testmod()
