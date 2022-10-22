@@ -3,7 +3,8 @@ Sypkova Anastasia
 
 Cut out galaxy image from fits file.
 
->>> df = read_sample_file("S0.20220728.dat")
+>>> df = read_sample_file(os.path.join(\
+"~/Desktop/GRANT_WORK/process_data/code", "S0.20220728.dat"))
 >>> get_galaxy_diameter('ESO545-040', df)
 94.9
 
@@ -15,6 +16,7 @@ Cut out galaxy image from fits file.
 
 """
 import doctest
+import os
 from typing import Optional, Tuple
 
 import astropy.io.fits as fits
@@ -31,7 +33,7 @@ from astropy.visualization import (
     PercentileInterval,
     PowerStretch,
 )
-from astropy.wcs.utils import proj_plane_pixel_scales
+from astropy.wcs.utils import proj_plane_pixel_scales, skycoord_to_pixel
 from matplotlib import colormaps
 
 
@@ -95,7 +97,7 @@ def get_central_pix_coordinates(fits_file: str) -> Tuple[int, int]:
         tuple (x_0, y_0)
     """
     with fits.open(fits_file) as hdul:
-        hdr = hdul[0].header
+        hdr = hdul[1].header
         x_0 = int(hdr["NAXIS1"] / 2)
         y_0 = int(hdr["NAXIS2"] / 2)
     return (x_0, y_0)
@@ -110,7 +112,7 @@ def get_image_data(fits_file: str) -> np.ndarray:
         numpy ndarray with image data values
     """
     with fits.open(fits_file) as hdul:
-        return hdul[0].data
+        return hdul[1].data if len(hdul) > 1 else hdul[0].data
 
 
 def get_wcs_from_file(fits_file: str) -> wcs.WCS:
@@ -122,7 +124,11 @@ def get_wcs_from_file(fits_file: str) -> wcs.WCS:
         wcs object
     """
     with fits.open(fits_file) as hdul:
-        return wcs.WCS(hdul[0].header, hdul)
+        return (
+            wcs.WCS(hdul[1].header, hdul)
+            if len(hdul) > 1
+            else wcs.WCS(hdul[0].header, hdul)
+        )
 
 
 def create_crop_fits(
@@ -140,16 +146,17 @@ def create_crop_fits(
         diameter_pix: the diameter of the galaxy in pixels
         w: wcs object of fits file
     """
-    cutout = Cutout2D(
-        image_data,
-        position=pos,
-        size=(2 * diameter_pix, 2 * diameter_pix),
-        wcs=w,
-    )
-    hdu = fits.PrimaryHDU()
-    hdu.data = cutout.data
-    hdu.header.update(cutout.wcs.to_header())
-    hdu.writeto(cutout_name)
+    if not os.path.isfile(cutout_name):
+        cutout = Cutout2D(
+            image_data,
+            position=pos,
+            size=(2 * diameter_pix, 2 * diameter_pix),
+            wcs=w,
+        )
+        hdu = fits.PrimaryHDU()
+        hdu.data = cutout.data
+        hdu.header.update(cutout.wcs.to_header())
+        hdu.writeto(cutout_name)
 
 
 def get_pix_diameter(diameter_arcsec: float, w: wcs.WCS) -> float:
@@ -209,11 +216,7 @@ def plot_crop_png(
         pngname: name of png file to save the picture
     """
     set_plt_parameters()
-    # Create figure and axes
-    fig, ax = plt.subplots()
-
-    # Display the image
-
+    fig, ax = plt.subplots(figsize=(8, 6))
     interval = PercentileInterval(99.1)
     vmin, vmax = interval.get_limits(image_data)
     norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=PowerStretch(0.5))
@@ -241,5 +244,35 @@ def plot_crop_png(
     plt.savefig(pngname, bbox_inches="tight")
     plt.show()
 
+
+if __name__ == "__main__":
+    galaxyname = "ESO545-040"
+    df = read_sample_file(
+        os.path.join(
+            "~/Desktop/GRANT_WORK/process_data/code", "S0.20220728.dat"
+        )
+    )
+    fits_file_image = os.path.join(
+        "/home/alderamin/Desktop/GRANT_WORK/process_data/galaxy_fits",
+        "legacysurvey-0394m202-image-g.fits.fz",
+    )
+    invar_file = os.path.join(
+        "/home/alderamin/Desktop/GRANT_WORK/process_data/invariance_maps",
+        "legacysurvey-0394m202-invvar-g.fits.fz",
+    )
+    for fits_file in [invar_file, fits_file_image]:
+        print("FITSFILE ", fits_file)
+        image_data = get_image_data(fits_file)
+        fits_wcs = get_wcs_from_file(fits_file)
+        print("WCS ", fits_wcs)
+        cel_coord = get_galaxy_ra_dec(galaxyname, df)
+        print("RA DEC", cel_coord)
+        pos_pix = skycoord_to_pixel(cel_coord, fits_wcs)
+        diameter_arcsec = get_galaxy_diameter(galaxyname, df)
+        diameter_pix = get_pix_diameter(diameter_arcsec, fits_wcs)
+        cutout_name = "cut_" + fits_file.split("/")[-1]
+        create_crop_fits(
+            image_data, pos_pix, diameter_pix, fits_wcs, cutout_name
+        )
 
 doctest.testmod()
