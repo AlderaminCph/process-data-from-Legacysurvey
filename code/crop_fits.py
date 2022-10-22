@@ -9,6 +9,7 @@ import pandas as pd
 import astropy.io.fits as fits
 from typing import Tuple
 import numpy as np
+import astropy.wcs as wcs
 
 
 def get_galaxy_diameter(
@@ -58,6 +59,17 @@ def get_image_data(fits_file: str) -> np.ndarray:
     with fits.open(fits_file) as hdul:
         image_data = hdul[0].data
     return image_data
+
+
+def get_wcs_from_file(fits_file: str) -> wcs.WCS:
+    """Retrive wcs from fits file
+    Args:
+        fits_file: full path to the fits file
+    Return:
+        wcs object
+    """
+    with fits.open(fits_file) as hdul:
+        return wcs.WCS(hdul[0].header, hdul)
 
 
 doctest.testmod()
