@@ -6,8 +6,8 @@ Cut out galaxy image from fits file
 """
 import doctest
 import pandas as pd
-
-# from typing import Tuple
+import astropy.io.fits as fits
+from typing import Tuple
 
 
 def get_galaxy_diameter(
@@ -31,6 +31,20 @@ def get_galaxy_diameter(
             df[col] = df[col].astype("float")
     galaxy_diameter = float(df[df["objname"] == galaxyname]["d25arcsec"])
     return galaxy_diameter
+
+
+def get_central_pix_coordinates(fits_file: str) -> Tuple[int, int]:
+    """Calculates pixel coordinates of the fits file center
+    Args:
+        fits_file: full path to the fits file
+    Return:
+        tuple (x_0, y_0)
+    """
+    with fits.open(fits_file) as hdul:
+        hdr = hdul[0].header
+        x_0 = int(hdr["NAXIS1"] / 2)
+        y_0 = int(hdr["NAXIS2"] / 2)
+    return (x_0, y_0)
 
 
 doctest.testmod()
