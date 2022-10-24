@@ -4,6 +4,9 @@ Sypkova Anastasia
 Cut out rectangular path with galaxy image from fits file with the size of 3
 diameters of galaxy
 
+Example of usage:
+python3 crop_files.py 'ESO545-040'
+
 >>> df = read_sample_file(os.path.join(\
 "~/Desktop/GRANT_WORK/process_data/code", "S0.20220728.dat"))
 >>> get_galaxy_diameter('ESO545-040', df)
@@ -18,6 +21,7 @@ diameters of galaxy
 """
 import doctest
 import os
+import sys
 from typing import Optional, Tuple
 
 import astropy.io.fits as fits
@@ -248,19 +252,22 @@ def plot_crop_png(
 
 
 if __name__ == "__main__":
-    galaxyname = "ESO545-040"
+    galaxyname = sys.argv[1]
     df = read_sample_file(
         os.path.join(
             "~/Desktop/GRANT_WORK/process_data/code", "S0.20220728.dat"
         )
     )
+    file_name_pattern = galaxyname.replace(" ", "")
+    file_name_pattern = file_name_pattern.replace("-", "_")
+
     fits_file_image = os.path.join(
         "/home/alderamin/Desktop/GRANT_WORK/process_data/galaxy_fits",
-        "legacysurvey-0394m202-image-g.fits.fz",
+        file_name_pattern + "_g.fits",
     )
     invar_file = os.path.join(
         "/home/alderamin/Desktop/GRANT_WORK/process_data/invariance_maps",
-        "legacysurvey-0394m202-invvar-g.fits.fz",
+        file_name_pattern + "_invvar_g.fits",
     )
     for fits_file in [invar_file, fits_file_image]:
         print("FITSFILE ", fits_file)
@@ -272,7 +279,10 @@ if __name__ == "__main__":
         pos_pix = skycoord_to_pixel(cel_coord, fits_wcs)
         diameter_arcsec = get_galaxy_diameter(galaxyname, df)
         diameter_pix = get_pix_diameter(diameter_arcsec, fits_wcs)
-        cutout_name = "cut_" + fits_file.split("/")[-1]
+        cut_directory = os.path.dirname(fits_file) + "/cut"
+        cutout_name = os.path.join(
+            cut_directory, "cut_" + fits_file.split("/")[-1]
+        )
         create_crop_fits(
             image_data, pos_pix, diameter_pix, fits_wcs, cutout_name
         )
