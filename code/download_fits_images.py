@@ -1,5 +1,5 @@
 """
-Download fits images and invariance maps of the galaxies from Leda survey
+Download fits images and invariance maps of the galaxies from Legacy survey dr9
 by its name.
 
 Example of usage:
@@ -14,8 +14,10 @@ from crop_fits import get_galaxy_ra_dec, read_sample_file
 
 if __name__ == "__main__":
     galaxyname = sys.argv[1]
+
     df = read_sample_file()
     print(df[df["objname"] == galaxyname])
+
     cel_coord = get_galaxy_ra_dec(galaxyname, df)
     ra = cel_coord.ra.degree
     dec = cel_coord.dec.degree
@@ -26,6 +28,7 @@ if __name__ == "__main__":
     )
     dirname = os.getcwd()
     print("DIRNAME", dirname)
+
     fits_tables_directory = os.path.join(dirname, "/fits_tables")
     print("FITS TABLE DIRECTORY", fits_tables_directory)
     if not os.path.isfile("survey-bricks.fits.gz") and not os.path.isfile(
