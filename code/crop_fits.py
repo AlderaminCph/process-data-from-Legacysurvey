@@ -1,7 +1,8 @@
 """
 Sypkova Anastasia
 
-Cut out galaxy image from fits file.
+Cut out rectangular path with galaxy image from fits file with the size of 3
+diameters of galaxy
 
 >>> df = read_sample_file(os.path.join(\
 "~/Desktop/GRANT_WORK/process_data/code", "S0.20220728.dat"))
@@ -147,10 +148,11 @@ def create_crop_fits(
         w: wcs object of fits file
     """
     if not os.path.isfile(cutout_name):
+
         cutout = Cutout2D(
             image_data,
             position=pos,
-            size=(2 * diameter_pix, 2 * diameter_pix),
+            size=(3 * diameter_pix, 3 * diameter_pix),
             wcs=w,
         )
         hdu = fits.PrimaryHDU()
@@ -232,8 +234,8 @@ def plot_crop_png(
     x_0, y_0 = pos_pix
     rect = patches.Rectangle(
         (x_0 - diameter_pix, y_0 - diameter_pix),
-        2 * diameter_pix,
-        2 * diameter_pix,
+        3 * diameter_pix,
+        3 * diameter_pix,
         linewidth=1,
         edgecolor="lightgreen",
         facecolor="none",
